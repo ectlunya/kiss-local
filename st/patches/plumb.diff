@@ -1,0 +1,119 @@
+--- st-0.8.3/config.def.h
++++ st/config.def.h
+@@ -472,3 +472,9 @@
+ 	" !\"#$%&'()*+,-./0123456789:;<=>?"
+ 	"@ABCDEFGHIJKLMNOPQRSTUVWXYZ[\\]^_"
+ 	"`abcdefghijklmnopqrstuvwxyz{|}~";
++
++/*
++ * plumb_cmd is run on mouse button 3 click, with argument set to
++ * current selection and with cwd set to the cwd of the active shell
++ */
++static char *plumb_cmd = "plumb";
+Only in st: config.h
+--- st-0.8.3/st.c
++++ st/st.c
+@@ -27,6 +27,9 @@
+ #elif defined(__FreeBSD__) || defined(__DragonFly__)
+  #include <libutil.h>
+ #endif
++#if defined(__OpenBSD__)
++ #include <sys/sysctl.h>
++#endif
+ 
+ /* Arbitrary sizes */
+ #define UTF_INVALID   0xFFFD
+@@ -240,6 +243,22 @@
+ static Rune utfmin[UTF_SIZ + 1] = {       0,    0,  0x80,  0x800,  0x10000};
+ static Rune utfmax[UTF_SIZ + 1] = {0x10FFFF, 0x7F, 0x7FF, 0xFFFF, 0x10FFFF};
+ 
++int
++subprocwd(char *path)
++{
++#if   defined(__linux)
++	if (snprintf(path, PATH_MAX, "/proc/%d/cwd", pid) < 0)
++		return -1;
++	return 0;
++#elif defined(__OpenBSD__)
++	size_t sz = PATH_MAX;
++	int name[3] = {CTL_KERN, KERN_PROC_CWD, pid};
++	if (sysctl(name, 3, path, &sz, 0, 0) == -1)
++		return -1;
++	return 0;
++#endif
++}
++
+ ssize_t
+ xwrite(int fd, const char *s, size_t len)
+ {
+@@ -816,7 +835,7 @@
+ 		break;
+ 	default:
+ #ifdef __OpenBSD__
+-		if (pledge("stdio rpath tty proc", NULL) == -1)
++		if (pledge("stdio rpath tty proc ps exec", NULL) == -1)
+ 			die("pledge\n");
+ #endif
+ 		close(s);
+--- st-0.8.3/st.h
++++ st/st.h
+@@ -113,6 +113,8 @@
+ void *xrealloc(void *, size_t);
+ char *xstrdup(char *);
+ 
++int subprocwd(char *);
++
+ /* config.h globals */
+ extern char *utmp;
+ extern char *scroll;
+Only in st: st.o
+--- st-0.8.3/x.c
++++ st/x.c
+@@ -5,6 +5,7 @@
+ #include <locale.h>
+ #include <signal.h>
+ #include <sys/select.h>
++#include <sys/wait.h>
+ #include <time.h>
+ #include <unistd.h>
+ #include <libgen.h>
+@@ -682,6 +683,29 @@
+ }
+ 
+ void
++plumb(char *sel) {
++	if (sel == NULL)
++		return;
++	char cwd[PATH_MAX];
++	pid_t child;
++	if (subprocwd(cwd) != 0)
++		return;
++
++	switch(child = fork()) {
++		case -1:
++			return;
++		case 0:
++			if (chdir(cwd) != 0)
++				exit(1);
++			if (execvp(plumb_cmd, (char *const []){plumb_cmd, sel, 0}) == -1)
++				exit(1);
++			exit(0);
++		default:
++			waitpid(child, NULL, 0);
++	}
++}
++
++void
+ brelease(XEvent *e)
+ {
+ 	if (IS_SET(MODE_MOUSE) && !(e->xbutton.state & forcemousemod)) {
+@@ -693,6 +717,8 @@
+ 		return;
+ 	if (e->xbutton.button == Button1)
+ 		mousesel(e, 1);
++	if (e->xbutton.button == Button3)
++		plumb(xsel.primary);
+ }
+ 
+ void
+Only in st: x.o

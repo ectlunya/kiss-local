@@ -1,0 +1,7 @@
+#!/bin/sh -e
+
+patch -p1 <dmenu-10-git.diff
+patch -p1 <dmenu-30-pass-center.diff
+
+make
+make DESTDIR="$1" PREFIX=/usr install

@@ -1,0 +1,12 @@
+#!/bin/sh -e
+
+patch -p1 < kernel-no-perl.patch
+mkdir -p "$1/boot"
+make olddefconfig
+
+make -j3
+make INSTALL_MOD_PATH="$1/usr" modules_install
+make INSTALL_PATH="$1/boot"    install
+
+mv "$1/boot/vmlinuz" "$1/boot/vmlinuz-$2"
+mv "$1/boot/System.map" "$1/boot/System.map-$2"

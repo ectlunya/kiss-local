@@ -1,0 +1,9 @@
+#!/bin/sh -e
+
+# Amend install path to '/usr'.
+sed -i'' "s#/usr/local#/usr#" config.mk
+
+patch -p1 <git.diff
+
+make
+make DESTDIR="$1" install

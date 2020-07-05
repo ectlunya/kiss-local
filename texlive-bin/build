@@ -1,0 +1,10 @@
+#!/bin/sh -e
+
+sed "s,DESTDIR,$1,g" texlive.profile >kisslinux.profile
+./install-tl -profile kisslinux.profile
+
+mkdir -p "$1/usr/bin"
+for file in "$1/opt/texlive/$2/bin/x86_64-linuxmusl/"*; do
+	ln -s "/opt/texlive/$2/bin/x86_64-linuxmusl/${file##*/}" \
+		"$1/usr/bin/${file##*/}"
+done

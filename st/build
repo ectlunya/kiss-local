@@ -1,0 +1,9 @@
+#!/bin/sh -e
+
+sed -i 's|Liberation Mono|Monospace|g' config.def.h
+
+patch -p1 <scrollback.diff
+patch -p1 <plumb.diff
+
+make
+make PREFIX=/usr DESTDIR="$1" install

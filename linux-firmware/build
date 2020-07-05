@@ -1,0 +1,15 @@
+#!/bin/sh -e
+
+DESTDIR="$1/lib/firmware"
+
+mkdir -p "$DESTDIR/i915"
+cp iwlwifi-8000C-36.ucode "$DESTDIR/iwlwifi-8000C-36.ucode"
+cp i915/skl_dmc_ver1_27.bin "$DESTDIR/i915/skl_dmc_ver1_27.bin"
+cp i915/skl_guc_ver1.bin "$DESTDIR/i915/skl_guc_ver1.bin"
+cp i915/skl_guc_ver4.bin "$DESTDIR/i915/skl_guc_ver4.bin"
+cp i915/skl_guc_ver6_1.bin "$DESTDIR/i915/skl_guc_ver6_1.bin"
+cp i915/skl_guc_ver9_33.bin "$DESTDIR/i915/skl_guc_ver9_33.bin"
+cp i915/skl_guc_32.0.3.bin "$DESTDIR/i915/skl_guc_32.0.3.bin"
+cp i915/skl_guc_33.0.0.bin "$DESTDIR/i915/skl_guc_33.0.0.bin"
+cp i915/skl_huc_ver01_07_1398.bin "$DESTDIR/i915/skl_huc_ver01_07_1398.bin"
+cp i915/skl_huc_2.0.0.bin "$DESTDIR/i915/skl_huc_2.0.0.bin"
